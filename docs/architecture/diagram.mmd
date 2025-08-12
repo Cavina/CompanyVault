@@ -1,0 +1,87 @@
+flowchart LR
+%% ==================== CONTAINERS ====================
+subgraph C["Clients (Obsidian)"]
+  MGR["Manager Client"]
+  EMPA["Employee Client A"]
+  EMPB["Employee Client B"]
+
+  %% Local hubs
+  C_TASKS_HUB["Clients: Tasks Interface (hub)"]
+  C_DASH_HUB["Clients: Dashboards Interface (hub)"]
+
+  MGR --> C_TASKS_HUB
+  EMPA --> C_TASKS_HUB
+  EMPB --> C_DASH_HUB
+end
+
+subgraph V["Shared Vault (Folder / Repo)"]
+  V_TASKS["/tasks/{assignee}/{task}.md"]
+  V_DASH["/dashboards/ (Dataview, Kanban)"]
+  V_PROJ["/projects/{project}/*"]
+  V_TMPL["/templates/ (Templater)"]
+  V_CFG[".obsidian/ (settings, plugin cfg)"]
+
+  V_TASKS_HUB["Vault: Task Data (hub)"]
+  V_DASH_HUB["Vault: Dashboard Data (hub)"]
+
+  V_TASKS --> V_TASKS_HUB
+  V_DASH  --> V_DASH_HUB
+  V_PROJ --> V_DASH_HUB
+  V_TMPL --> V_DASH_HUB
+end
+
+subgraph P["Plugins"]
+  P_IN["Plugins Input (from Vault dashboards)"]
+  P_DV["Dataview"]
+  P_KB["Kanban"]
+  P_PRJ["Projects (optional)"]
+  P_MISC["Templater / Calendar / Git"]
+  P_OUT["Plugins Output (all views)"]
+
+  P_IN --> P_DV
+  P_IN --> P_KB
+  P_IN --> P_PRJ
+  P_IN --> P_MISC
+
+  P_DV --> P_OUT
+  P_KB --> P_OUT
+  P_PRJ --> P_OUT
+  P_MISC --> P_OUT
+end
+
+subgraph S["GitHub Remote (private repo)"]
+  S_GIT["origin/main"]
+end
+
+subgraph A["Automations / Exports (Optional)"]
+  A_CRON["Nightly commit/push (history, archival)"]
+  A_LINT["Validation / Lint scripts (schema checks)"]
+  A_EXP["Static HTML / JSON export (read-only dashboards)"]
+end
+
+%% ==================== CROSS-CONTAINER CONNECTIONS ====================
+%% Bi-directional where needed
+C_TASKS_HUB <--> V_TASKS_HUB
+C_DASH_HUB  <--> V_DASH_HUB
+
+V_DASH_HUB <--> P_IN
+
+P_OUT <--> MGR
+P_OUT <--> EMPA
+P_OUT <--> EMPB
+
+%% Vault <-> GitHub
+V_CFG <--> S_GIT
+V_TASKS_HUB <--> S_GIT
+
+%% Vault -> Automations
+V_CFG --> A_CRON
+V_CFG --> A_LINT
+V_DASH_HUB --> A_EXP
+
+%% ==================== COLORS ====================
+style C fill:#d1e7dd,stroke:#0f5132,stroke-width:2px
+style V fill:#cff4fc,stroke:#055160,stroke-width:2px
+style P fill:#fff3cd,stroke:#664d03,stroke-width:2px
+style S fill:#f8d7da,stroke:#842029,stroke-width:2px
+style A fill:#e2e3e5,stroke:#41464b,stroke-width:2px
